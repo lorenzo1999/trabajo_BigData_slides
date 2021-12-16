@@ -1,0 +1,1771 @@
+---
+title: "¿Se vive bien en la comunidad Valenciana?"
+author: "Lawrence Daniel Phillips, Julio González Miralles y Pedro López Mejías"
+date: "17/12/2021"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+
+
+## Índice
+
+1. Introducción
+2. Condiciones materiales
+3. Trabajo
+4. Educación y salud
+5. Otros indicadores
+6. Índice de buena vida
+
+
+## Introducción
+
+El objetivo principal del trabajo es analizar a través de una serie de indicadores la calidad de vida en nuestra comunidad para conoocer nuestra posición con respecto al resto de comunidades españolas.En ciertos aspectos analizaremos un ámbito de mayor nivel, es decir, analizaremos la posición de España en comparación con la UE para ver como esto se refleja en la calidad de vida de la Comunidad Valenciana.
+
+## Condiciones materiales
+
+### Renta media
+
+
+```{r todo codigo, echo = FALSE, include = FALSE}
+#INSTALAMOS LIBRERÍAS
+library(tidyverse)
+library(klippy)   
+library(knitr)
+library(data.table)
+library(gt)
+library(ggthemes)
+library(gganimate)
+library(transformr)
+library(ggpubr)
+library(ggplot2)
+library(dplyr)
+library(hrbrthemes)
+library(paletteer)
+library(kableExtra)
+library(plotly)
+library(extrafont) 
+
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE, message = FALSE, warning = FALSE, 
+                      #results = "hold",
+                      cache = FALSE, cache.path = "/caches/", comment = "#>",
+                      #fig.width = 7, #fig.height= 7,   
+                      #out.width = 7, out.height = 7,
+                      collapse = TRUE,  fig.show = "hold",
+                      fig.asp = 0.628, out.width = "75%", fig.align = "center")
+knitr::opts_chunk$set(dev = "png", dev.args = list(type = "cairo-png"))
+
+options(scipen = 999) #- para quitar la notación científica
+options("yaml.eval.expr" = TRUE)
+
+klippy::klippy(position = c("top", "right"))
+
+#CARGAMOS LOS DATOS
+
+Renta_media <- rio::import(here::here("./datos/Renta_media.csv"))
+Renta_media_UE <- rio::import(here::here("./datos/Renta_media_UE.csv"))
+
+Renta_mediana <- rio::import(here::here("./datos/Renta_mediana.csv"))
+Renta_mediana_UE <- rio::import(here::here("./datos/Renta_mediana_UE.csv"))
+
+Desigualdad <- rio::import(here::here("./datos/Desigualdad.csv"))
+Desigualdad_UE <- rio::import(here::here("./datos/Desigualdad_UE.csv"))                    
+R_pobreza <- rio::import(here::here("./datos/Riesgo_pobreza.csv"))
+R_pobreza_UE <- rio::import(here::here("./datos/Riesgo_pobreza_UE.csv"))
+
+tasa_empleo <- rio::import(here::here("./datos/tasa_empleo.csv"))
+df_tasa_empleo <- tasa_empleo
+
+tasa_paro <- rio::import(here::here("./datos/tasa_paro.csv"))
+df_tasa_paro <- tasa_paro
+
+satis_trab <- rio::import(here::here("./datos/satisfaccion.csv"))
+df_satis_trab <- satis_trab
+
+trabajo_temp <- rio::import(here::here("./datos/trabajo_temporal.csv"))
+df_trabajo_temp <- trabajo_temp
+
+abandono <- rio::import(here::here("datos/abandono_ccaa.csv"))
+
+esperanza_vida <- rio::import(here::here("datos/esperanza_vida.csv")) 
+
+no_acceso_1 <- rio::import(here::here("datos/no_acceso_1.csv")) 
+
+ruidos <- rio::import(here::here("./datos/ruidos.csv"))
+df_ruidos <- ruidos
+
+df_del_ccaa <- rio::import(here::here("datos/del_ccaa.csv")) 
+
+vida_hm <- rio::import(here::here("datos/vida_hm.csv"))
+
+no_acceso_1 <- rio::import(here::here("datos/no_acceso_1.csv"))
+
+no_acceso_2 <- rio::import(here::here("datos/no_acceso_2.csv"))
+
+educ_02 <- rio::import(here::here("datos/educ_02.csv"))
+
+educ_38 <- rio::import(here::here("datos/educ_38.csv"))
+
+delincuencia <- rio::import(here::here("datos/del_ccaa_julio.csv"))
+
+abandono <- rio::import(here::here("datos/abandono_ccaa.csv"))
+
+#Lawrence, mirar csvs y copiar los originales en arhcivo datos
+df_no_acceso_1 <- rio::import(here::here("./datos/no_acceso_1_lawrence.csv")) 
+
+df_abandono <- rio::import(here::here("datos/abandono_ccaa_lawrence.csv"))
+
+df_educ_38 <- rio::import(here::here("datos/educ_38_lawrence.csv")) 
+
+df_esperanza_vida <- rio::import(here::here("datos/esperanza_vida_lawrence.csv"))
+
+df_ruidos <- rio::import(here::here("./datos/ruidos.csv"))
+
+df_del_ccaa <- rio::import(here::here("datos/del_ccaa_lawrence.csv")) 
+
+#CODIGO UNIVERSAL--------------
+#Crear vector de las Comunidades Autónomas-----
+CCAA <- c("Andalucia", "Aragon", "Asturias",  "Baleares", "Canarias", "Cantabria", "Castilla_La_Mancha", "Castilla_y_Leon", "Catalunya", "Ceuta", "Comunidad_Valenciana", "Extremadura", "Galicia", "Madrid", "Melilla", "Murcia", "Navarra", "Pais_Vasco", "La_Rioja", "España", "UE_27", "UE_28")
+
+#para que sea misma longitud (sin UE27, UE28 y España) ya que en la creación del ranking vamos a utilizar CCAA solo
+CCAA_sin_UE <- c("Andalucia", "Aragon", "Asturias",  "Baleares", "Canarias", "Cantabria", "Castilla_La_Mancha", "Castilla_y_Leon", "Catalunya", "Ceuta", "Comunidad_Valenciana", "Extremadura", "Galicia", "Madrid", "Melilla", "Murcia", "Navarra", "Pais_Vasco", "La_Rioja")
+
+#CCAA pero ordenado para datos julio y Pedro (trabajo, educ_salud)
+CCAA_sin_UE_sin_ord <- c("Andalucia", "Aragon", "Asturias",  "Baleares", "Canarias", "Cantabria", "Castilla_y_Leon", "Castilla_La_Mancha", "Catalunya", "Comunidad_Valenciana", "Extremadura", "Galicia", "Madrid", "Murcia", "Navarra", "Pais_Vasco", "La_Rioja","Ceuta", "Melilla")
+
+#CCAA para "ruidos", 
+CCAA_2 <- c("Ceuta", "Murcia", "Canarias", "Melilla", "Madrid", "Comunidad_Valenciana", "Andalucia", "Baleares", "Navarra", "La_Rioja", "Pais_Vasco", "Catalunya", "Asturias", "Aragon", "Cantabria", "Galicia", "Castilla_y_Leon", "Castilla_La_Mancha", "Extremadura")
+#CCAA para columna de Total norm ef amb
+CCAA_3 <- c("Cantabria", "Extremadura", "Castilla_y_Leon", "Galicia", "Castilla_La_Mancha", "Asturias", "La_Rioja", "Aragon", "Navarra", "Baleares", "Pais_Vasco", "Comunidad_Valenciana", "Catalunya", "Andalucia", "Madrid", "Canarias", "Murcia", "Ceuta", "Melilla")
+#CCAA para ranking final
+CCAA_rank_final <- c("Pais_Vasco", "Navarra", "Madrid", "Catalunya", "Baleares", "La_Rioja", "Aragon", "Castilla_y_Leon", "Cantabria", "Galicia", "Asturias", "Castilla_La_Mancha", "Comunidad_Valenciana", "Murcia", "Andalucia", "Canarias", "Extremadura", "Melilla", "Ceuta")
+#funcion para normalizar numeros, cuanto mas grande mejor
+min_max_norm_gran <- function(x) {
+  (x - min(x)) / (max(x) - min(x))
+}
+
+#funcion para normalizar numeros, cuanto mas pequeño mejor
+min_max_norm_peq <- function(x) {
+  1 - ((x - min(x)) / (max(x) - min(x)))
+}
+
+#Renta media
+transpuesto_media <- dcast(melt(Renta_media, id.vars = "V1"), variable ~ V1)
+transpuesto_UE_media <- dcast(melt(Renta_media_UE, id.vars = "V1"), variable ~ V1)
+
+transpuesto_UE_media$Media <- NULL
+transpuesto_media$Media <- NULL
+
+transpuesto_UE_media$Var.2 <- as.numeric(transpuesto_UE_media$Var.2) 
+
+UE_ESP_media <- inner_join(transpuesto_media, transpuesto_UE_media, by = "Var.2")
+transpuesto_UE_media <- dcast(melt(UE_ESP_media, id.vars = "Var.2"), variable ~ Var.2)
+
+#eliminar columnas "variable" "total2 (estaba repetida), "variable"
+transpuesto_UE_media <- transpuesto_UE_media[-c(1, 22, 23),]
+
+#quitar fila de "variable"
+transpuesto_UE_media$variable <- NULL
+#añadir vector de CCAA al data frame transpuesto_UE
+transpuesto_UE_media$CCAA <- CCAA
+#reordenar para poner columna de CCAA primero
+transpuesto_UE_media <- transpuesto_UE_media  %>% select("CCAA", everything())
+
+#filtrar solo valencia, España y UE
+df_CV_ESP_UE_media <- transpuesto_UE_media %>% filter(CCAA %in% c("Comunidad_Valenciana", "España", "UE_27", "UE_28"))
+
+df_Renta_media <- transpuesto_UE_media %>% filter(!CCAA %in% c("UE_28", "UE_27", "España"))
+
+#Gráfico renta media-----
+df_Renta_media_graph <- transpuesto_UE_media %>% pivot_longer(., !CCAA, values_to = "Renta_media", names_to = "Year")
+view(df_Renta_media_graph)
+df_Renta_media_graph$Renta_media <- as.numeric(df_Renta_media_graph$Renta_media)
+
+transpuesto_UE_media_ord <- transpuesto_UE_media %>% arrange(desc(`2020`))
+transpuesto_UE_media_ord$`2020` <- as.numeric(transpuesto_UE_media_ord$`2020`)
+
+p_renta_media <- transpuesto_UE_media_ord %>% select(-c(`2008`,`2009`, `2010`, `2011`, `2012`, `2013`, `2014`))  %>% 
+  filter(CCAA %in% c("Navarra", "Pais_Vasco", "Madrid", "Extremadura", "Murcia", "Andalucia", "Comunidad_Valenciana", "UE_27")) %>% gt() %>%
+  cols_label(CCAA = "Comunidad Autónoma") %>% tab_header(title = md("Comparación de la Renta media de la CV con otras CCAA y la UE-27")) %>%
+  tab_source_note(source_note = "Datos recogidos del INE, expresados en € y el año 2013 como base.") %>%
+  tab_style(
+    locations = cells_column_labels(columns = everything()),
+            style = list(
+              cell_borders(sides = "bottom", weight = px(3)),
+              cell_text(weight = "bold"))
+  ) %>% tab_style(
+    locations = cells_title(groups = "title"),
+    style     = list(
+      cell_text(weight = "bold", size = 24)
+    )
+  ) %>%
+  data_color(
+    columns = `2020`,
+    colors = scales::col_numeric (
+      palette = c(
+        "red", "orange", "green", "blue"),
+      domain = c(13000, 23500))
+  )
+
+#Renta mediana
+transpuesto_mediana <- dcast(melt(Renta_mediana, id.vars = "V1"), variable ~ V1)
+transpuesto_UE_mediana <- dcast(melt(Renta_mediana_UE, id.vars = "V1"), variable ~ V1)
+
+transpuesto_UE_mediana$Mediana <- NULL
+transpuesto_mediana$Mediana <- NULL
+
+transpuesto_UE_mediana$Var.2 <- as.numeric(transpuesto_UE_mediana$Var.2)
+
+UE_ESP_mediana <- inner_join(transpuesto_mediana, transpuesto_UE_mediana, by = "Var.2")
+
+transpuesto_UE_mediana <- dcast(melt(UE_ESP_mediana, id.vars = "Var.2"), variable ~ Var.2)
+
+#elimirar columnas "variable" "total2 (estaba repetida), "variable"
+transpuesto_UE_mediana <- transpuesto_UE_mediana[-c(1, 22, 23),]
+
+#quitar fila de "variable"
+transpuesto_UE_mediana$variable <- NULL
+#añadir vector de CCAA al data frame transpuesto_UE
+transpuesto_UE_mediana$CCAA <- CCAA
+#reordenar para poner columna de CCAA primero
+transpuesto_UE_mediana <- transpuesto_UE_mediana  %>% select("CCAA", everything())
+
+#filtrar solo valencia, España y UE
+df_CV_ESP_UE_mediana <- transpuesto_UE_mediana %>% filter(CCAA %in% c("Comunidad_Valenciana", "España", "UE_27", "UE_28"))
+
+df_Renta_mediana <- transpuesto_UE_mediana %>% filter(!CCAA %in% c("UE_28", "UE_27", "España"))
+
+#Gráfico renta mediana------
+df_Renta_mediana_graph <- transpuesto_UE_mediana %>% pivot_longer(., !CCAA, values_to = "Renta_mediana", names_to = "Year")
+view(df_Renta_mediana_graph)
+df_Renta_mediana_graph$Renta_mediana <- as.numeric(df_Renta_mediana_graph$Renta_mediana)
+
+df_Renta_mediana_graph$Year <- as.numeric(df_Renta_mediana_graph$Year)
+
+p_renta_mediana <- df_Renta_mediana_graph %>% filter( CCAA %in% c("Navarra", "Pais_Vasco", "Madrid", "Extremadura", "Murcia", "Andalucia", "Comunidad_Valenciana", "UE_27")) %>% 
+  ggplot(., aes(x = Year, y = Renta_mediana, group = CCAA, color = CCAA)) + geom_point() + geom_line()  +
+  scale_y_continuous(limits = c(9000, 22000), breaks = seq(0, 25000, by = 2500)) +
+  labs(x = NULL, y = "Renta mediana (€)",
+       title = "Comparación de la Renta mediana de la CV con otras CCAA y la UE-27",
+       subtitle = "Vemos un claro efecto de la Gran Recesión y su posterior recuperación",
+       caption = "Datos recogidos del INE. Año base 2013") + 
+  theme(axis.title.x = element_text(margin = margin(t = 10), size = 15),
+        axis.title.y = element_text(margin = margin(r = 10), size = 15)) +
+  theme_stata()
+  
+#DESIGUALDAD
+
+transpuesto_desigualdad <- dcast(melt(Desigualdad, id.vars = "V1"), variable ~ V1)
+transpuesto_desigualdad_UE <- dcast(melt(Desigualdad_UE, id.vars = "V1"), variable ~ V1)
+
+transpuesto_desigualdad_UE$Var.2 <- as.numeric(transpuesto_desigualdad_UE$Var.2) 
+transpuesto_desigualdad$Var.2 <- as.numeric(transpuesto_desigualdad$Var.2) 
+
+UE_ESP_desigualdad <- inner_join(transpuesto_desigualdad, transpuesto_desigualdad_UE, by = "Var.2")
+
+transpuesto_desigualdad_UE <- dcast(melt(UE_ESP_desigualdad, id.vars = "Var.2"), variable ~ Var.2)
+
+#elimirar columnas "variable" "total2 (estaba repetida), "variable"
+transpuesto_desigualdad_UE <- transpuesto_desigualdad_UE[-c(1, 22, 23,24),]
+
+#quitar fila de "variable"
+transpuesto_desigualdad_UE$variable <- NULL
+#añadir vector de CCAA al data frame transpuesto_UE
+transpuesto_desigualdad_UE$CCAA <- CCAA
+#reordenar para poner columna de CCAA primero
+transpuesto_desigualdad_UE <- transpuesto_desigualdad_UE  %>% select("CCAA", everything())
+
+#filtrar solo valencia, España y UE
+df_CV_ESP_UE_desigualdad <- transpuesto_desigualdad_UE %>% filter(CCAA %in% c("Comunidad_Valenciana", "España", "UE_27", "UE_28"))
+
+df_Desigualdad <- transpuesto_desigualdad_UE %>% filter(!CCAA %in% c("UE_28", "UE_27", "España"))
+
+#Gráfico Desigualdad-----
+#cambiar todas comas a puntos en una línea
+df_Desigualdad_sin_CCAA <- df_Desigualdad[-1]
+df_Desigualdad_sin_CCAA <- data.frame(lapply(df_Desigualdad_sin_CCAA, function(x) gsub(",", ".", x, fixed = TRUE)))
+df_Desigualdad_sin_CCAA <- as.data.frame(sapply(df_Desigualdad_sin_CCAA, as.numeric))
+
+df_Desigualdad_sin_CCAA$CCAA <- CCAA_sin_UE
+df_Desigualdad_sin_CCAA <- df_Desigualdad_sin_CCAA  %>% select(CCAA, everything())
+df_Desigualdad <- df_Desigualdad_sin_CCAA
+
+df_Desiguladad_graph <- transpuesto_desigualdad_UE %>% pivot_longer(., !CCAA, values_to = "Desigualdad", names_to = "Year")
+
+df_Desiguladad_graph$Desigualdad <- as.numeric(gsub(",", ".", gsub("\\.", "", df_Desiguladad_graph$Desigualdad)))
+df_Desiguladad_graph$Year <- as.numeric(df_Desiguladad_graph$Year)
+
+p_desigualdad <- df_Desiguladad_graph %>% filter(!CCAA == "UE_27", CCAA %in% c("Melilla", "Ceuta", "Asturias", "castilla_y_Leon", "Extremadura", "Navarra", "Comunidad_Valenciana")) %>% 
+  ggplot( aes(x = Year, y = Desigualdad, group = CCAA, color = CCAA)) + geom_point() + geom_line()  +
+  scale_y_continuous(limits = c(2, 16), breaks = seq(0, 20, by = 2)) +
+  scale_x_continuous(limits = c(2008, 2020), breaks = seq(2008, 2020, by = 5))  + facet_wrap(~ CCAA) +
+  labs(x = NULL, y = "Ratio de desigualdad",
+       title = "Comparación de la Desigualdad de la CV con otras CCAA",
+       subtitle = "Relación entre la renta media del quintil más alto con respecto al quintil más bajo",
+       caption = "Datos recogidos del INE. Año base 2013") + 
+  theme(axis.title.x = element_text(margin = margin(t = 10), size = 15),
+        axis.title.y = element_text(margin = margin(r = 10), size = 15)) +
+  theme_stata()
+
+#Riesgo pobreza
+
+transpuesto_R_pobreza <- dcast(melt(R_pobreza, id.vars = "V1"), variable ~ V1)
+transpuesto_R_pobreza_UE <- dcast(melt(R_pobreza_UE, id.vars = "V1"), variable ~ V1)
+
+transpuesto_R_pobreza_UE$Var.2 <- as.numeric(transpuesto_R_pobreza_UE$Var.2) 
+transpuesto_R_pobreza$Var.2 <- as.numeric(transpuesto_R_pobreza$Var.2) 
+
+UE_ESP_R_pobreza <- inner_join(transpuesto_R_pobreza, transpuesto_R_pobreza_UE, by = "Var.2")
+transpuesto_R_pobreza_UE <- dcast(melt(UE_ESP_R_pobreza, id.vars = "Var.2"), variable ~ Var.2)
+
+#elimirar columnas "variable" "total2 (estaba repetida), "variable"
+transpuesto_R_pobreza_UE <- transpuesto_R_pobreza_UE[-c(1, 22, 23),]
+
+#quitar fila de "variable"
+transpuesto_R_pobreza_UE$variable <- NULL
+#añadir vector de CCAA al data frame transpuesto_UE
+transpuesto_R_pobreza_UE$CCAA <- CCAA
+#reordenar para poner columna de CCAA primero
+transpuesto_R_pobreza_UE <- transpuesto_R_pobreza_UE  %>% select("CCAA", everything())
+
+#filtrar solo valencia, España y UE
+df_CV_ESP_UE_R_pobreza <- transpuesto_R_pobreza_UE %>% filter(CCAA %in% c("Comunidad_Valenciana", "España", "UE_27", "UE_28"))
+
+df_Riesgo_pobreza <- transpuesto_R_pobreza_UE %>% filter(!CCAA %in% c("UE_28", "UE_27", "España"))
+
+#Gráfico Riesgo Pobreza-----
+
+
+df_Riesgo_pobreza_sin_CCAA <- df_Riesgo_pobreza[-1]
+df_Riesgo_pobreza_sin_CCAA <- data.frame(lapply(df_Riesgo_pobreza_sin_CCAA, function(x) gsub(",", ".", x, fixed = TRUE)))
+df_Riesgo_pobreza_sin_CCAA <- as.data.frame(sapply(df_Riesgo_pobreza_sin_CCAA, as.numeric))
+
+df_Riesgo_pobreza_sin_CCAA$CCAA <- CCAA_sin_UE
+df_Riesgo_pobreza_sin_CCAA <- df_Riesgo_pobreza_sin_CCAA  %>% select(CCAA, everything())
+df_Riesgo_pobreza <- df_Riesgo_pobreza_sin_CCAA
+
+df_Riesgo_pobreza_graph<- transpuesto_R_pobreza_UE %>% pivot_longer(., !CCAA, values_to = "Riesgo_pobreza", names_to = "Year")
+
+df_Riesgo_pobreza_graph$Riesgo_pobreza <- as.numeric(gsub(",", ".", gsub("\\.", "", df_Riesgo_pobreza_graph$Riesgo_pobreza)))
+#p4 <- df_Riesgo_pobreza_graph %>% filter(!CCAA == "UE_27", CCAA %in% c("Melilla", "Ceuta", "Extremadura", "Navarra", "Pais_Vasco", "Baleares", "Comunidad_Valenciana")) %>% 
+ # ggplot(., aes(x = Year, y = Riesgo_pobreza, group = CCAA, color = CCAA)) + geom_point() + geom_line()  + scale_y_continuous(limits = c(0, 50), breaks = seq(0, 50, by = 5))
+#p4
+#eliminar x de todas las columnas
+colnames (df_Riesgo_pobreza) <- gsub("X", "", colnames(df_Riesgo_pobreza))
+#cambiar comas a puntos (se ve mejor en la tabla)
+transpuesto_R_pobreza_UE$`2020` <- as.numeric(gsub(",", ".", gsub("\\.", "", transpuesto_R_pobreza_UE$`2020`)))
+transpuesto_R_pobreza_UE$`2019` <- as.numeric(gsub(",", ".", gsub("\\.", "", transpuesto_R_pobreza_UE$`2019`)))
+transpuesto_R_pobreza_UE$`2018` <- as.numeric(gsub(",", ".", gsub("\\.", "", transpuesto_R_pobreza_UE$`2018`)))
+transpuesto_R_pobreza_UE$`2017` <- as.numeric(gsub(",", ".", gsub("\\.", "", transpuesto_R_pobreza_UE$`2017`)))
+transpuesto_R_pobreza_UE$`2016` <- as.numeric(gsub(",", ".", gsub("\\.", "", transpuesto_R_pobreza_UE$`2016`)))
+transpuesto_R_pobreza_UE$`2015` <- as.numeric(gsub(",", ".", gsub("\\.", "", transpuesto_R_pobreza_UE$`2015`)))
+  
+transpuesto_R_pobreza_UE_ord <- transpuesto_R_pobreza_UE %>% arrange(`2020`)
+  
+p_riesgo_pobreza <- transpuesto_R_pobreza_UE_ord %>% select(-c(`2008`,`2009`, `2010`, `2011`, `2012`, `2013`, `2014`))  %>% 
+    filter(CCAA %in% c("Navarra", "Pais_Vasco", "Baleares", "Extremadura", "ceuta", "Extremadura", "Comunidad_Valenciana", "UE_27")) %>% gt() %>%
+    cols_label(CCAA = "Comunidad Autónoma") %>% tab_header(title = md("Comparación del Riesgo de Pobreza de la CV con otras CCAA y la UE-27"),
+                                                           subtitle = md("El umbral de pobreza está fijado en el 60% de la mediana de ingresos de todos los hogares a nivel nacional ")) %>%
+    tab_source_note(source_note = "Datos recogidos del INE, expresados en % y el año 2013 como base.") %>%
+    tab_style(
+      locations = cells_column_labels(columns = everything()),
+      style = list(
+        cell_borders(sides = "bottom", weight = px(3)),
+        cell_text(weight = "bold"))
+    ) %>% tab_style(
+      locations = cells_title(groups = "title"),
+      style     = list(
+        cell_text(weight = "bold", size = 24)
+      )
+    ) %>%
+    data_color(
+      columns = `2020`,
+      colors = scales::col_numeric(
+        palette = c(
+          "blue", "green", "orange","red"),
+        domain = c(9, 32)))
+
+names(tasa_empleo) <- as.matrix(tasa_empleo[1, ])
+tasa_empleo <- tasa_empleo[-1, ]
+tasa_empleo[] <- lapply(tasa_empleo, function(x) type.convert(as.character(x)))
+
+
+names(tasa_empleo) = c("CCAA", "2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020")
+# Cambio el nombre de las columnas para que la primera  columna se llame ccAA y podamos pasar a formato LONG
+
+df_long <- tasa_empleo %>% pivot_longer(cols=2:16 , names_to= "Años", values_to = "Tasa_Empleo") 
+# Pasamos del formato wide al formato long
+
+tasa_empleo_1 <- df_long %>% filter(CCAA != "Total")
+# Filtramos primero para obtener solo los datos de las diferentes comunidades autónomas, eliminando el total nacional.
+
+# Como el gráfico sería muy poco visible, vamos a comparar unicamente las CCAA con mayor y menor tasa de empleo, para posteriormente analizar la Comunidad valenciana 
+
+tasa_empleo_2 <- tasa_empleo_1 %>% 
+  filter(CCAA %in% c("Comunitat Valenciana", "Madrid, Comunidad de", "Cataluña", "Pais Vasco", "Balears, Illes", "Andalucia", "Murcia, Region de", "Extremadura"))
+
+tasa_empleo_2$Tasa_Empleo <- as.numeric(gsub(",", ".", gsub("\\.", "", tasa_empleo_2$Tasa_Empleo))) #me cambia las comas por puntos
+
+tasa_empleo_2$Tasa_Empleo <- as.numeric(tasa_empleo_2$Tasa_Empleo)#convierto la variable que es character en numeric
+
+graf_empleo <- ggplot(tasa_empleo_2, aes(Años, Tasa_Empleo, color = CCAA, group= CCAA)) + geom_line() + geom_point() 
+#scale_y_continuous(limits = c(20,80), breaks = seq(20, 80, by = 2))
+ graf_empleo + theme(plot.subtitle = element_text(size = 11, 
+    colour = "gray11", hjust = 0.5), plot.caption = element_text(size = 10, 
+    colour = "gray11"), panel.grid.major = element_line(size = 0.7), 
+    panel.grid.minor = element_line(size = 0.7), 
+    axis.title = element_text(size = 12, 
+        face = "bold", vjust = 1.75), axis.text = element_text(size = 11, 
+        colour = "gray4"), plot.title = element_text(family = "serif", 
+        size = 35, face = "bold.italic", 
+        hjust = 0.5, vjust = 1.75), panel.background = element_rect(fill = "gray95", 
+        size = 0.7), plot.background = element_rect(fill = "rosybrown3", 
+        colour = "gray0", linetype = "dashed")) +
+   scale_y_continuous(limits = c(35, 63), breaks = seq(35, 63, by = 5))+
+   labs(title = "TASA EMPLEO", 
+    x = "AÑOS", y = "TASA EMPLEO (% 16 y mas años)", 
+    subtitle = "(Desde 2006 a 2020 por CCAA)", 
+    caption = "Datos provenientes del INE")
+
+ names(tasa_paro) <- as.matrix(tasa_paro[1, ])
+tasa_paro <- tasa_paro[-1, ]
+tasa_paro[] <- lapply(tasa_paro, function(x) type.convert(as.character(x)))
+
+
+names(tasa_paro) = c("CCAA", "2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020")
+# Cambio el nombre de las columnas para que la primera  columna se llame ccAA y podamos pasar a formato LONG
+
+df_long2 <- tasa_paro %>% pivot_longer(cols=2:16 , names_to= "Años", values_to = "Tasa_Paro")
+# Pasamos del formato wide al formato long
+
+df_long2$Tasa_Paro <- as.numeric(gsub(",", ".", gsub("\\.", "", df_long2$Tasa_Paro)))
+
+#Gráfico 10 comunidades con mayor tasa de paro (dentro se encuentra valencia)
+df_ccaa <- df_long2 %>% 
+  filter(Años == 2020, CCAA != "Pais Vasco" ) %>% # hemos eliminado al Pais Vasco ya que nos salía dentro del Top 10 con mas Tasa de Paro y en realidad, es el que menor tasa presenta :)
+  select(CCAA , Tasa_Paro) %>%
+  slice_max(Tasa_Paro, n = 10)
+
+graf_paro <- ggplot(df_ccaa, aes(x = CCAA, y = Tasa_Paro)) + 
+  geom_bar(stat = "identity",aes(fill = Tasa_Paro))
+
+graf_paro1<- graf_paro + labs(title = "% Tasa de Paro Año 2020",
+       subtitle = "10 comunidades con mas paro",
+       caption = "Elaboración propia",
+       x = "CCAA",
+       y = "% paro") + theme_light() + 
+  geom_text(aes(label = Tasa_Paro),nudge_y =0.3, colour = "black")
+
+names(tasa_paro) <- as.matrix(tasa_paro[1, ])
+tasa_paro <- tasa_paro[-1, ]
+tasa_paro[] <- lapply(tasa_paro, function(x) type.convert(as.character(x)))
+
+
+names(tasa_paro) = c("CCAA", "2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020")
+# Cambio el nombre de las columnas para que la primera  columna se llame ccAA y podamos pasar a formato LONG
+
+df_long2 <- tasa_paro %>% pivot_longer(cols=2:16 , names_to= "Años", values_to = "Tasa_Paro")
+# Pasamos del formato wide al formato long
+
+df_long2$Tasa_Paro <- as.numeric(gsub(",", ".", gsub("\\.", "", df_long2$Tasa_Paro)))
+#Gráfico 10 comunidades con mayor tasa de paro (dentro se encuentra valencia)
+df_ccaa <- df_long2 %>% 
+  filter(Años == 2020, CCAA != "Pais Vasco" ) %>% # hemos eliminado al Pais Vasco ya que nos salía dentro del Top 10 con mas Tasa de Paro y en realidad, es el que menor tasa presenta :)
+  select(CCAA , Tasa_Paro) %>%
+  slice_max(Tasa_Paro, n = 10)
+
+graf_paro <- ggplot(df_ccaa, aes(x = CCAA, y = Tasa_Paro)) + 
+  geom_bar(stat = "identity",aes(fill = Tasa_Paro))
+
+graf_paro1<- graf_paro + labs(title = "% Tasa de Paro Año 2020",
+       subtitle = "10 comunidades con mas paro",
+       caption = "Elaboración propia",
+       x = "CCAA",
+       y = "% paro") + theme_light() + 
+  geom_text(aes(label = Tasa_Paro),nudge_y =0.3, colour = "black")
+
+names(satis_trab) <- as.matrix(satis_trab[1, ])
+satis_trab <- satis_trab[-1, ]
+satis_trab[] <- lapply(satis_trab, function(x) type.convert(as.character(x)))
+
+
+names(satis_trab) = c("CCAA", "De 0 a 4", "De 5 a 6", "De 7 a 8", "De 9 a 10", "Satisfaccion Media")
+# Cambio el nombre de las columnas para que la primera  columna se llame ccAA y podamos pasar a formato LONG
+
+#paquete:
+
+
+graf_satis_trab <- knitr::kable(satis_trab) %>%
+  kableExtra::kable_styling(fixed_thead = list(enabled = T, background = "orange")) %>%  column_spec(7, bold = T, color = "white", background = "grey") %>% row_spec(7, bold = T, color = "white", background = "grey")
+
+names(trabajo_temp) <- as.matrix(trabajo_temp[1, ])
+trabajo_temp <- trabajo_temp[-1, ]
+trabajo_temp[] <- lapply(trabajo_temp, function(x) type.convert(as.character(x)))
+
+
+names(trabajo_temp) = c("CCAA", "2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020")
+# Cambio el nombre de las columnas para que la primera  columna se llame ccAA y podamos pasar a formato LONG
+
+df_long4 <- trabajo_temp %>% pivot_longer(cols=2:16 , names_to= "Años", values_to = "Tasa_Temporalidad")
+# Pasamos del formato wide al formato long
+
+df_long4$Tasa_Temporalidad <- as.numeric(gsub(",", ".", gsub("\\.", "", df_long4$Tasa_Temporalidad)))
+#install.packages("paletteer")
+
+
+
+temp_1 <- df_long4 %>% group_by(CCAA) %>% filter(Años == 2020) %>% arrange(desc(Tasa_Temporalidad)) 
+
+graficotemp_2020 <- ggplot(temp_1, aes(x="", y = Tasa_Temporalidad, fill=CCAA)) +     geom_bar(stat ="identity", color = "black") + 
+    geom_text(aes(label = Tasa_Temporalidad), position = position_stack(vjust=0.5), color="black", size = 4, ) + 
+  coord_polar(theta = "y")  + 
+  theme_void() + 
+  scale_fill_manual(values = c("STEELBLUE", "BLUE", "ORANGE", "RED","BROWN","GREEN", "DARKGREY", "#66CDAA","#8B2323", "#00008B", "#98F5FF", "#FF7256", "#FFF8DC", "#76EE00", "#CAFF70", "#B8860B", "#FF1493","#BF3EFF", "#FF6A6A", "#6B8E23", "DARK ORANGE"))+
+  labs(title = "% TRABAJADORES CON CONTRATO TEMPORAL")
+graficotemp_2020 + theme(panel.grid.major = element_line(linetype = "blank")) +labs(fill = "TASA TEMPORALIDAD") 
+
+vida_hm$Total <- as.numeric(gsub(",",".", gsub("\\.","", vida_hm$Total)))
+vida_hm$Total<- as.numeric(vida_hm$Total)
+#Datos con el resto de comunidades
+vida_ccaa <- rio::import(here::here("datos/vida_ccaa.csv"))
+vida_ccaa$Total <- as.numeric(gsub(",",".", gsub("\\.","", vida_ccaa$Total)))
+vida_ccaa$Total<- as.numeric(vida_ccaa$Total)
+
+vida_ccaa2020 <- vida_ccaa %>%
+  filter(Periodo == 2020) %>%
+  arrange(desc(Total)) %>%
+  select(`Comunidades y Ciudades Autónomas`, Total)
+
+#Tabla
+tabla_ccaa <- vida_ccaa2020 %>% gt()
+tabla_ccaa <- gt::gt(vida_ccaa2020) %>%
+  tab_header(title = md("**Esperanza de vida en las Comunidades Autonomas**"),
+             subtitle = md("*En años*")) %>%
+  tab_source_note(md("Fuente: datos de [INE](https://www.ine.es/jaxiT3/Datos.htm?t=1448)"))%>%
+  cols_width(columns = c(Total) ~ px(100)) %>%
+  tab_options(column_labels.border.bottom.color = "black",
+              table_body.border.bottom.color = "black",
+              table_body.hlines.color = "black") %>%
+  tab_style(style = cell_fill(color = "lightblue"),
+            locations = cells_body(columns = Total,
+                                   rows = Total< 81)) %>%
+  tab_style(style = cell_text(color = "white"),
+            locations = cells_body(columns = Total,
+                                   rows = Total< 81)) %>%
+  tab_style(style = cell_fill(color = "blue"),
+            locations = cells_body(columns = Total,
+                                   rows = Total> 81)) %>%
+  tab_style(style = cell_text(color = "white"),
+            locations = cells_body(columns = Total,
+                                   rows = Total >81))%>%
+  tab_style(style = cell_fill(color = "purple"),
+            locations = cells_body(columns = Total,
+                                   rows = Total> 83)) %>%
+  tab_style(style = cell_text(color = "white"),
+            locations = cells_body(columns = Total,
+                                   rows = Total> 83))
+
+#Datos para el grafico + el grafico
+
+vida_evol <- vida_ccaa %>%
+  filter(`Comunidades y Ciudades Autónomas` %in% c ("Balears, Illes", "Navarra, Comunidad Foral de", "Comunitat Valenciana", "Madrid, Comunidad de", "Cataluña"))%>%
+  select(`Comunidades y Ciudades Autónomas`, Periodo, Total)
+vida_di <- vida_evol %>%
+  ggplot( aes(x=Periodo, y=Total, group= `Comunidades y Ciudades Autónomas`, color=`Comunidades y Ciudades Autónomas`)) +
+  geom_line() +
+  geom_point() +
+  ggtitle("Evolución Esperanza de Vida") +
+  theme_ft_rc() +
+  scale_x_continuous(limits = c(1975, 2020), breaks = seq(1975, 2020, by = 15))+
+  ylab("Numero de años") +
+  transition_reveal(Periodo)
+#Grafico animado CV
+vida_hm_di <-vida_hm %>%
+  ggplot( aes(x=Periodo, y=Total, group=Sexo, color=Sexo)) +
+  geom_line() +
+  geom_point() +
+  ggtitle("Esperanza de vida por sexo en la Comunidad Valenciana") +
+  ylab("Numero de años") +
+  transition_reveal(Periodo)+
+  theme_modern_rc()+
+  view_follow()
+
+names(no_acceso_1) <- as.matrix(no_acceso_1[1, ])
+no_acceso_1 <- no_acceso_1[-1, ]
+no_acceso_1[] <- lapply(no_acceso_1, function(x) type.convert(as.character(x)))
+
+
+no_acceso_1 <- no_acceso_1 %>%
+  arrange(desc(`2020`)) %>%
+  pivot_longer(.,!CCAA, values_to = "No Acceso 1", names_to = "year")
+no_acceso_1$`No Acceso 1` <- as.numeric(gsub(",",".", gsub("\\.","", no_acceso_1$`No Acceso 1`)))
+no_acceso_1$`No Acceso 1` <- as.numeric(no_acceso_1$`No Acceso 1`)
+
+
+ 
+names(no_acceso_2) <- as.matrix(no_acceso_2[1, ])
+no_acceso_2 <- no_acceso_2[-1, ]
+no_acceso_2[] <- lapply(no_acceso_2, function(x) type.convert(as.character(x)))
+
+
+no_acceso_2 <- no_acceso_2 %>%
+  arrange(desc(`2020`)) %>%
+  pivot_longer(.,!CCAA, values_to = "No Acceso 2", names_to = "year")
+
+no_acceso_2$`No Acceso 2` <- as.numeric(gsub(",",".", gsub("\\.","", no_acceso_2$`No Acceso 2`)))
+no_acceso_2$`No Acceso 2` <- as.numeric(no_acceso_2$`No Acceso 2`)
+
+#Union tablas
+df_inner <- inner_join(no_acceso_1, no_acceso_2)
+
+#filtrados
+comparacion_ccaa <- df_inner %>%
+  filter(year == 2020) %>%
+  select(CCAA, `No Acceso 1`, `No Acceso 2`)
+
+#Tabla definitiva
+
+tabla_com <- comparacion_ccaa %>% gt()
+tabla_com <- gt::gt(comparacion_ccaa) %>%
+  tab_header(title = md("**Datos No Acceso a Servicios Sanitarios 2020**"),
+             subtitle = md("*Datos en %*")) %>%
+  tab_source_note(md("**Fuente**: datos de [INE](https://www.ine.es/ss/Satellite?L=es_ES&c=INESeccion_C&cid=1259944487867&p=1254735110672&pagename=ProductosYServicios%2FPYSLayout&param1=PYSDetalleFichaIndicador&param3=1259937499084)")) %>%
+  tab_source_note(md("**No Acceso 1**: muy caro; muy lejos para acceder; problemas de lista de espera")) %>%
+  tab_source_note(md("**No Acceso 2**:no disponer de tiempo; no conoce ningún buen especialista; miedo al médico, hospitales, exploraciones médicas o tratamiento; esperar y ver si el problema mejora; otras razones")) %>%
+  cols_width(columns = c(`No Acceso 1`) ~ px(100)) %>%
+  cols_width(columns = c(`No Acceso 2`) ~ px(100)) %>%
+  tab_options(column_labels.border.bottom.color = "black",
+              table_body.border.bottom.color = "black",
+              table_body.hlines.color = "black") %>%
+  tab_style(style = cell_fill(color = "brown1"),
+            locations = cells_body(columns = `No Acceso 1`,
+                                   rows = `No Acceso 1`> 1)) %>%
+  tab_style(style = cell_text(color = "white"),
+            locations = cells_body(columns = `No Acceso 1`,
+                                   rows = `No Acceso 1`> 1)) %>%
+  tab_style(style = cell_fill(color = "brown1"),
+            locations = cells_body(columns = `No Acceso 2`,
+                                   rows = `No Acceso 2`> 1)) %>%
+  tab_style(style = cell_text(color = "white"),
+            locations = cells_body(columns = `No Acceso 2`,
+                                   rows = `No Acceso 2` > 1)) %>%
+  tab_style(style = cell_borders(color = "black", weight = px(3)),
+            locations = cells_body(columns = `No Acceso 1`,
+                                   rows = `No Acceso 1`>= 0)) %>%
+  tab_style(style = cell_borders(color = "black", weight = px(3)),
+            locations = cells_body(columns = `No Acceso 2`,
+                                   rows = `No Acceso 2`>= 0))
+
+no_acceso_cv <- df_inner %>%
+  filter(CCAA %in% c ( "Comunitat Valenciana"))
+
+grafico_cv1 <- ggplot(no_acceso_cv, aes(year, `No Acceso 1`, fill = CCAA)) + geom_col(position = "dodge")+
+  theme_igray()+
+  labs(title = "Datos de No Acceso por Razón 1")+
+  labs(subtitle = "Datos CV")+
+  labs(caption = "Datos provenientes del INE")+
+  theme(axis.text.x = element_text(colour = "black", size = 8, angle = 90, hjust = 0.5, vjust = 0.5))
+
+
+
+grafico_cv2 <- ggplot(no_acceso_cv, aes(year, `No Acceso 2`, fill = CCAA)) +
+  geom_col(position = "dodge") +
+  theme_igray()+
+  labs(title = "Datos de No Acceso por Razón 2")+
+  labs(subtitle = "Datos CV")+
+  labs(caption = "Datos provenientes del INE")+
+  theme(axis.text.x = element_text(colour = "black", size = 8, angle = 90, hjust = 0.5, vjust = 0.5))
+
+#Nivel 0-2
+
+names(educ_02) <- as.matrix(educ_02[1, ])
+educ_02 <- educ_02[-1, ]
+educ_02[] <- lapply(educ_02, function(x) type.convert(as.character(x)))
+
+
+#Editando datos
+
+educ2020 <- educ_02 %>%
+  select(CCAA,`2018`,`2019`, `2020`)%>%
+  arrange(desc(`2020`))
+
+#Tabla 1
+
+tabla2020 <- educ2020 %>% gt()
+tabla2020 <- gt::gt(educ2020)
+
+
+tabla2020 <- tabla2020 %>% 
+  tab_header(title = md("**Nivel de formación alcanzado por la población de 16 a 64 años (%)**"),
+             subtitle = md("*Nivel 0-2*")) %>%
+  tab_source_note(md("Fuente: datos de [INE](https://www.ine.es/ss/Satellite?L=es_ES&c=INESeccion_C&cid=1259949477082&p=1254735110672&pagename=ProductosYServicios%2FPYSLayout&param1=PYSDetalleFichaIndicador&param3=1259937499084)"))%>%
+  tab_source_note(md("**Nivel 0-2**:preescolar, primaria y 1ª etapa de educación secundaria"))
+
+
+tabla2020 <- tabla2020 %>% 
+  cols_width(columns = c(`2020`) ~ px(100))
+
+
+
+tabla2020 <- tabla2020 %>%
+  tab_options(column_labels.border.bottom.color = "black",
+              table_body.border.bottom.color = "black",
+              table_body.hlines.color = "black")
+
+
+tabla2020 <- tabla2020 %>%
+  tab_style(style = cell_fill(color = "red"),
+            locations = cells_body(columns = `2020`,
+                                   rows = `2020`< 35)) %>%
+  tab_style(style = cell_text(color = "white"),
+            locations = cells_body(columns = `2020`,
+                                   rows = `2020`< 35)) %>%
+  tab_style(style = cell_fill(color = "orange"),
+            locations = cells_body(columns = `2020`,
+                                   rows = `2020`> 35)) %>%
+  tab_style(style = cell_text(color = "white"),
+            locations = cells_body(columns = `2020`,
+                                   rows = `2020` >35))%>%
+  tab_style(style = cell_fill(color = "green"),
+            locations = cells_body(columns = `2020`,
+                                   rows = `2020`> 45)) %>%
+  tab_style(style = cell_text(color = "white"),
+            locations = cells_body(columns = `2020`,
+                                   rows = `2020`> 45))
+
+
+
+#Trasnformando datos
+
+educ_max02 <- educ_02 %>%
+  arrange(desc(`2020`)) %>%
+  slice_max(`2020`, n=10)%>%
+  pivot_longer(.,!CCAA, values_to = "poblacion", names_to = "year") %>%
+  filter(between(year,2013,2020)) %>%
+  filter(CCAA %in% c ("Extremadura","Ceuta", "Comunitat Valenciana"))
+educ_max02$poblacion <- as.numeric(gsub(",",".", gsub("\\.","", educ_max02$poblacion)))
+educ_max02$poblacion<- as.numeric(educ_max02$poblacion)
+
+educ_cv <- educ_02 %>%
+  arrange(desc(`2020`)) %>%
+  slice_min(`2020`, n=10)%>%
+  pivot_longer(.,!CCAA, values_to = "poblacion", names_to = "year") %>%
+  filter(between(year,2013,2020)) %>%
+  filter(CCAA %in% c ("Madrid, Comunidad de","Cataluna", "Comunitat Valenciana", "Aragon"))
+#Grafico 1
+
+grafico_educmax <- ggplot(educ_max02, aes(year, poblacion, fill = CCAA)) + geom_col(position = "dodge")+
+  theme(axis.text.x = element_text(colour = "black", size = 8, angle = 90, hjust = 0.5, vjust = 0.5))+
+  theme(axis.title.y = element_text(size=8, angle = 90, hjust = 0.5, vjust = 0.5))+
+  labs(title = "Nivel de formación alcanzado por la población de 16 a 64 años (%)")+
+  labs(subtitle = "Comparación de la Comunitat Valenciana con Ceuta y Extremadura (Nivel 0-2)")+
+  labs(caption = "Datos provenientes del INE")
+
+  
+
+#Grafico 2
+grafico_educmin <- ggplot(educ_cv, aes(year, poblacion, fill = CCAA)) + geom_col(position = "dodge")+
+  labs(title = "Nivel de formación alcanzado por la población de 16 a 64 años (%)")+
+  labs(subtitle = "Comparación de la Comunitat Valenciana con Aragón, Cataluña, Madrid (Nivel 0-2)")+
+  labs(caption = "Datos provenientes del INE")+
+  theme(axis.text.x = element_text(colour = "black", size = 8, angle = 90, hjust = 0.5, vjust = 0.5))
+#Nivel 3-8:
+
+names(educ_38) <- as.matrix(educ_38[1, ])
+educ_38 <- educ_38[-1, ]
+educ_38[] <- lapply(educ_38, function(x) type.convert(as.character(x)))
+
+
+
+
+educ2038 <- educ_38 %>%
+  select(CCAA,`2018`,`2019`, `2020`)%>%
+  arrange(desc(`2020`))
+
+#tabla
+
+tabla2038 <- educ2038 %>% gt()
+tabla2038 <- gt::gt(educ2038) %>%
+  tab_header(title = md("**Nivel de formación alcanzado por la población de 16 a 64 años (%)**"),
+             subtitle = md("*Nivel 3-8*")) %>%
+  tab_source_note(md("Fuente: datos de [INE](https://www.ine.es/ss/Satellite?L=es_ES&c=INESeccion_C&cid=1259949477082&p=1254735110672&pagename=ProductosYServicios%2FPYSLayout&param1=PYSDetalleFichaIndicador&param3=1259937499084)"))%>%
+  tab_source_note(md("**Nivel 3-8**:2ª etapa de educación secundaria y postsecundaria no superior, 1º y 2º ciclo de educación superior y doctorado")) %>%
+  cols_width(columns = c(`2020`) ~ px(100)) %>%
+  tab_options(column_labels.border.bottom.color = "black",
+              table_body.border.bottom.color = "black",
+              table_body.hlines.color = "black") %>%
+  tab_style(style = cell_fill(color = "red"),
+            locations = cells_body(columns = `2020`,
+                                   rows = `2020`< 50)) %>%
+  tab_style(style = cell_text(color = "white"),
+            locations = cells_body(columns = `2020`,
+                                   rows = `2020`< 50)) %>%
+  tab_style(style = cell_fill(color = "orange"),
+            locations = cells_body(columns = `2020`,
+                                   rows = `2020`> 50)) %>%
+  tab_style(style = cell_text(color = "white"),
+            locations = cells_body(columns = `2020`,
+                                   rows = `2020` >50))%>%
+  tab_style(style = cell_fill(color = "green"),
+            locations = cells_body(columns = `2020`,
+                                   rows = `2020`> 60)) %>%
+  tab_style(style = cell_text(color = "white"),
+            locations = cells_body(columns = `2020`,
+                                   rows = `2020`> 60))
+
+#Transformando datos
+
+educ_max38 <- educ_38 %>%
+  arrange(desc(`2020`)) %>%
+  slice_max(`2020`, n=10)%>%
+  pivot_longer(.,!CCAA, values_to = "poblacion", names_to = "year") %>%
+  filter(between(year,2013,2020)) %>%
+  filter(CCAA %in% c ("Pais Vasco","Madrid, Comunidad de", "Comunitat Valenciana"))
+
+#Grafico 3
+
+grafico_educmax38 <- ggplot(educ_max38, aes(year, poblacion, fill = CCAA)) + geom_col(position = "dodge")+
+  theme(axis.text.x = element_text(colour = "black", size = 8, angle = 90, hjust = 0.5, vjust = 0.5))+
+  labs(title = "Nivel de formación alcanzado por la población de 16 a 64 años (%)")+
+  labs(subtitle = "Comparación de la Comunitat Valenciana con País Vasco, Madrid (Nivel 3-8)")+
+  labs(caption = "Datos provenientes del INE")
+  
+
+
+#Transformando datos
+
+educ_cv38 <- educ_38 %>%
+  arrange(desc(`2020`)) %>%
+  slice_min(`2020`, n=15)%>%
+  pivot_longer(.,!CCAA, values_to = "poblacion", names_to = "year") %>%
+  filter(between(year,2013,2020)) %>%
+  filter(CCAA %in% c ("Andalucia","Murcia, Region de", "Comunitat Valenciana", "Balears, Illes"))
+#Grafico 4
+
+grafico_educmin38 <- ggplot(educ_cv38, aes(year, poblacion, fill = CCAA)) + geom_col(position = "dodge")+
+  theme(axis.text.x = element_text(colour = "black", size = 8, angle = 90, hjust = 0.5, vjust = 0.5))+
+  labs(title = "Nivel de formación alcanzado por la población de 16 a 64 años (%)")+
+  labs(subtitle = "Comparación de la Comunitat Valenciana con Andalucía, Islas Baleares, Murcia (Nivel 3-8)")+
+  labs(caption = "Datos provenientes del INE")
+#Parte del abandono escolar
+
+
+names(abandono) <- as.matrix(abandono[1, ])
+abandono <- abandono[-1, ]
+abandono[] <- lapply(abandono, function(x) type.convert(as.character(x)))
+
+
+
+abandono_cv <- abandono %>%
+  arrange(desc(`2020`)) %>%
+  pivot_longer(.,!CCAA, values_to = "poblacion", names_to = "year")  %>%
+  filter(CCAA %in% c ("Comunitat Valenciana"))
+
+abandono_cv$poblacion <- as.numeric(gsub(",",".", gsub("\\.","", abandono_cv$poblacion)))
+abandono_cv$poblacion <- as.numeric(abandono_cv$poblacion)
+
+abandono_cv$year <- as.numeric(gsub(",",".", gsub("\\.","", abandono_cv$year)))
+abandono_cv$year <- as.numeric(abandono_cv$year)
+
+
+abandono_ccaa <- abandono %>%
+  arrange(`2020`) %>%
+  pivot_longer(., !CCAA, values_to = "poblacion", names_to = "year") %>%
+  filter(year == 2020)
+  
+abandono_ccaa$poblacion <- as.numeric(gsub(",",".", gsub("\\.","", abandono_ccaa$poblacion)))
+abandono_ccaa$poblacion <- as.numeric(abandono_ccaa$poblacion)
+
+
+#Grafico bueno
+g_aban <- ggplot(abandono_ccaa, aes(x=CCAA, y=poblacion)) +
+  geom_segment( aes(x=CCAA, xend=CCAA, y=0, yend=poblacion)) +
+  geom_point( size=5, color="red", fill=alpha("orange", 0.3), alpha=0.7, shape=21, stroke=2) +
+  theme_light() +
+  coord_flip() +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks.y = element_blank()
+  )+
+  labs(title = "Datos abandono escolar en las Comunidades Autonomas")+
+  labs(subtitle = "Año 2020")+
+  labs(caption = "Datos (en %) provenientes del INE")
+
+names(ruidos) <- as.matrix(ruidos[1, ])
+ruidos <- ruidos[-1, ]
+ruidos[] <- lapply(ruidos, function(x) type.convert(as.character(x)))
+
+
+
+names(ruidos) = c("CCAA", "2004", "2005", "2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020")
+# Cambio el nombre de las columnas para que la primera  columna se llame ccAA y podamos pasar a formato LONG
+
+
+df_long5 <- ruidos %>% pivot_longer(cols=2:18 , names_to= "Años", values_to = "porcent_pob_ruidos") 
+df_long_5_2 <- df_long5 %>% filter(Años == 2020)
+# Pasamos del formato wide al formato long
+df_long_5_2$porcent_pob_ruidos <- as.numeric(gsub(",", ".", gsub("\\.", "", df_long_5_2$porcent_pob_ruidos)))
+
+#install.packages("ggthemes")
+
+
+# 4 comunidades con mas ruido
+mas_ruido<- df_long_5_2 %>% filter(CCAA %in% c("Ceuta", "Murcia",
+"Canarias", "Melilla", "CValenciana"))
+
+ruido1 <- ggplot(mas_ruido, aes(CCAA,porcent_pob_ruidos))+ geom_col()+ labs(title = "CCAA CON MAS RUIDOS", subtitle = "% poblacion sufre ruidos por CCAA", x = "CCAA", y = "% poblacion ruidos")+ 
+  theme_solarized() 
+
+
+# 4 comunidades con menos ruido
+
+menos_ruido<- df_long_5_2 %>% filter(CCAA %in% c("Galicia", "CastillaLeon",
+"CastillaLaMancha", "Extremadura"))
+
+ruido2 <- ggplot(menos_ruido, aes(CCAA,porcent_pob_ruidos))+ 
+  geom_col()+ scale_y_continuous(limits = c(0, 25), breaks = seq(0, 25, by = 5)) + labs(title = "CCAA CON MENOS RUIDOS", subtitle = "% poblacion sufre ruidos por CCAA", x = "CCAA", y = "% poblacion ruidos")+ 
+  theme_solarized() 
+
+delincuencia$Total <- as.numeric(gsub(",",".", gsub("\\.","", delincuencia$Total)))
+delincuencia$Total<- as.numeric(delincuencia$Total)
+
+delin_ccaa <- delincuencia %>%
+  filter( periodo == 2020)%>%
+  arrange(desc(Total))%>%
+  select(`Comunidades y Ciudades Autónomas`, Total)
+
+#Tabla Datos
+
+del_ccaa <- delin_ccaa %>% gt()
+del_ccaa <- gt::gt(delin_ccaa) %>%
+  tab_header(title = md("**Delincuencia en las Comunidades Autonomas. Año 2020**"),
+             subtitle = md("*En %*")) %>%
+  tab_source_note(md("Fuente: datos de [INE](https://www.ine.es/jaxi/Datos.htm?path=/t00/ICV_ant/dim6/&file=61201.px)"))%>%
+  cols_width(columns = c(Total) ~ px(80)) %>%
+  tab_options(column_labels.border.bottom.color = "black",
+              table_body.border.bottom.color = "black",
+              table_body.hlines.color = "black") %>%
+  tab_style(style = cell_fill(color = "olivedrab1"),
+            locations = cells_body(columns = Total,
+                                   rows = Total > 2)) %>%
+  tab_style(style = cell_text(color = "white"),
+            locations = cells_body(columns = Total,
+                                   rows = Total > 2))%>%
+  tab_style(style = cell_fill(color = "chartreuse2"),
+            locations = cells_body(columns = Total,
+                                   rows = Total > 5.5)) %>%
+  tab_style(style = cell_text(color = "white"),
+            locations = cells_body(columns = Total,
+                                   rows = Total > 5.5)) %>%
+  tab_style(style = cell_fill(color = "chartreuse3"),
+            locations = cells_body(columns = Total,
+                                   rows = Total > 7.5)) %>%
+  tab_style(style = cell_text(color = "white"),
+            locations = cells_body(columns = Total,
+                                   rows = Total > 7.5))%>%
+  tab_style(style = cell_fill(color = "gold3"),
+            locations = cells_body(columns = Total,
+                                   rows = Total > 10)) %>%
+  tab_style(style = cell_text(color = "white"),
+            locations = cells_body(columns = Total,
+                                   rows = Total > 10)) %>%
+  tab_style(style = cell_fill(color = "gold"),
+            locations = cells_body(columns = Total,
+                                   rows = Total > 15)) %>%
+  tab_style(style = cell_text(color = "white"),
+            locations = cells_body(columns = Total,
+                                   rows = Total > 15))%>%
+  tab_style(style = cell_fill(color = "gold"),
+            locations = cells_body(columns = Total,
+                                   rows = Total > 20)) %>%
+  tab_style(style = cell_text(color = "white"),
+            locations = cells_body(columns = Total,
+                                   rows = Total > 20))%>%
+  tab_style(style = cell_fill(color = "firebrick3"),
+            locations = cells_body(columns = Total,
+                                   rows = Total > 25)) %>%
+  tab_style(style = cell_text(color = "white"),
+            locations = cells_body(columns = Total,
+                                   rows = Total > 25)) %>%
+  tab_style(style = cell_fill(color = "firebrick1"),
+            locations = cells_body(columns = Total,
+                                   rows = Total > 30)) %>%
+  tab_style(style = cell_text(color = "white"),
+            locations = cells_body(columns = Total,
+                                   rows = Total > 30))
+
+
+
+#Top delincuencia
+
+delin_top <- delincuencia %>%
+  filter(`Comunidades y Ciudades Autónomas` %in% c ("Melilla", "Ceuta", "Murcia, Región de", "Canarias", "Cataluña"))%>%
+  filter(between (periodo, 2010,2020))
+
+p_top <- delin_top %>%
+  ggplot( aes(x=periodo, y=Total, group= `Comunidades y Ciudades Autónomas`, color=`Comunidades y Ciudades Autónomas`)) +
+  geom_line() +
+  geom_point() +
+  ggtitle("Top 5 CCAA - Delincuencia") +
+  ylab("% de población total") +
+  transition_reveal(periodo)+
+  scale_x_continuous(limits = c(2010, 2020), breaks = seq(2010, 2020, by = 4)) +
+  theme_solarized()
+
+
+#Top menos delincuencia
+
+delin_topmenos <- delincuencia %>%
+  filter(`Comunidades y Ciudades Autónomas` %in% c ("Cantabria", "Rioja, La", "Asturias, Principado de", "Navarra, Comunidad Foral de", "Galicia"))%>%
+  filter(between (periodo, 2010,2020))
+
+p_min <- delin_topmenos %>%
+  ggplot( aes(x=periodo, y=Total, group= `Comunidades y Ciudades Autónomas`, color=`Comunidades y Ciudades Autónomas`)) +
+  geom_line() +
+  geom_point() +
+  ggtitle("Top 5 CCAA - Con menos Delincuencia") +
+  theme_solarized() +
+  ylab("% de población total") +
+  scale_x_continuous(limits = c(2010, 2020), breaks = seq(2010, 2020, by = 4)) + transition_reveal(periodo)
+  
+#Delincuencia CV
+
+delin_cv <- delincuencia %>%
+  filter(`Comunidades y Ciudades Autónomas` %in% c ("Comunitat Valenciana"))
+
+#Grafico delincuencia CV
+
+p_delcv <- delin_cv %>%
+  ggplot( aes(x=periodo, y=Total, group= `Comunidades y Ciudades Autónomas`, color=`Comunidades y Ciudades Autónomas`)) +
+  geom_line() +
+  geom_point() +
+  ggtitle("Delincuencia en la Comunidad Valenciana") +
+  theme_ipsum() +
+  ylab("% de población total") +
+  transition_reveal(periodo) 
+#Limpieza de datos---------
+#Limpieza de datos de tasa empleo, para hacer ranking
+names(df_tasa_empleo) <- as.matrix(df_tasa_empleo[1, ])
+df_tasa_empleo <- df_tasa_empleo[-c(1:3,23), ]
+df_tasa_empleo[] <- lapply(df_tasa_empleo, function(x) type.convert(as.character(x)))
+
+df_tasa_empleo <- df_tasa_empleo[-1]
+df_tasa_empleo <- data.frame(lapply(df_tasa_empleo, function(x) gsub(",", ".", x, fixed = TRUE)))
+df_tasa_empleo <- as.data.frame(sapply(df_tasa_empleo, as.numeric))
+
+df_tasa_empleo$CCAA <- CCAA_sin_UE_sin_ord
+df_tasa_empleo <- df_tasa_empleo  %>% select(CCAA, everything())
+colnames (df_tasa_empleo) <- gsub("X", "", colnames(df_tasa_empleo))
+
+#Limpieza de datos de tasa paro, para hacer ranking
+names(df_tasa_paro) <- as.matrix(df_tasa_paro[1, ])
+df_tasa_paro <- df_tasa_paro[-c(1:2), ]
+df_tasa_paro[] <- lapply(df_tasa_paro, function(x) type.convert(as.character(x)))
+
+df_tasa_paro <- df_tasa_paro[-1]
+df_tasa_paro <- data.frame(lapply(df_tasa_paro, function(x) gsub(",", ".", x, fixed = TRUE)))
+df_tasa_paro <- as.data.frame(sapply(df_tasa_paro, as.numeric))
+
+df_tasa_paro$CCAA <- CCAA_sin_UE_sin_ord
+df_tasa_paro <- df_tasa_paro %>% select(CCAA, everything())
+colnames (df_tasa_paro) <- gsub("X", "", colnames(df_tasa_paro))
+
+#Limpieza de datos de satisfacción trabajo, para hacer ranking
+names(df_satis_trab) <- as.matrix(df_satis_trab[1, ])
+df_satis_trab <- df_satis_trab[-c(1:3), ]
+df_satis_trab[] <- lapply(df_satis_trab, function(x) type.convert(as.character(x)))
+
+df_satis_trab <- df_satis_trab[-1]
+df_satis_trab <- data.frame(lapply(df_satis_trab, function(x) gsub(",", ".", x, fixed = TRUE)))
+df_satis_trab <- as.data.frame(sapply(df_satis_trab, as.numeric))
+
+df_satis_trab$CCAA <- CCAA_sin_UE_sin_ord
+df_satis_trab <- df_satis_trab %>% select(CCAA, everything())
+
+#Limpieza de datos de trabajo temporal, para hacer ranking
+names(df_trabajo_temp) <- as.matrix(df_trabajo_temp[1, ])
+df_trabajo_temp <- df_trabajo_temp[-c(1:3), ]
+df_trabajo_temp <- lapply(df_trabajo_temp, function(x) type.convert(as.character(x)))
+
+df_trabajo_temp <- df_trabajo_temp[-1]
+df_trabajo_temp <- data.frame(lapply(df_trabajo_temp, function(x) gsub(",", ".", x, fixed = TRUE)))
+df_trabajo_temp <- as.data.frame(sapply(df_trabajo_temp, as.numeric))
+
+df_trabajo_temp$CCAA <- CCAA_sin_UE_sin_ord
+df_trabajo_temp <- df_trabajo_temp %>% select(CCAA, everything())
+colnames (df_trabajo_temp) <- gsub("X", "", colnames(df_trabajo_temp))
+
+#limpieza de datos abandono
+names(df_abandono) <- as.matrix(df_abandono[1, ])
+df_abandono <- df_abandono[-c(1:2), ]
+df_abandono[] <- lapply(df_abandono, function(x) type.convert(as.character(x)))
+
+df_abandono <- df_abandono[-1]
+df_abandono <- data.frame(lapply(df_abandono, function(x) gsub(",", ".", x, fixed = TRUE)))
+df_abandono <- as.data.frame(sapply(df_abandono, as.numeric))
+
+df_abandono$CCAA <- CCAA_sin_UE_sin_ord
+df_abandono <- df_abandono  %>% select(CCAA, everything())
+colnames (df_abandono) <- gsub("X", "", colnames(df_abandono))
+
+#limpieza datos esperanza de vida
+names(df_esperanza_vida) <- as.matrix(df_esperanza_vida[1, ])
+df_esperanza_vida <- df_esperanza_vida[-c(1:2), ]
+df_esperanza_vida[] <- lapply(df_esperanza_vida, function(x) type.convert(as.character(x)))
+
+df_esperanza_vida$CCAA <- CCAA_sin_UE_sin_ord
+df_esperanza_vida <- df_esperanza_vida  %>% select(CCAA, everything())
+colnames (df_esperanza_vida) <- gsub("X", "", colnames(df_esperanza_vida))
+
+#limpieza datos acceso 1
+
+names(df_no_acceso_1) <- as.matrix(df_no_acceso_1[1, ])
+df_no_acceso_1 <- df_no_acceso_1[-c(1:2), ]
+df_no_acceso_1[] <- lapply(df_no_acceso_1, function(x) type.convert(as.character(x)))
+
+df_no_acceso_1$CCAA <- CCAA_sin_UE_sin_ord
+df_no_acceso_1 <- df_no_acceso_1  %>% select(CCAA, everything())
+colnames (df_no_acceso_1) <- gsub("X", "", colnames(df_no_acceso_1))
+
+#edcu38 limpieza datos
+names(df_educ_38) <- as.matrix(df_educ_38[1, ])
+df_educ_38 <- df_educ_38[-c(1:3), ]
+df_educ_38[] <- lapply(df_educ_38, function(x) type.convert(as.character(x)))
+
+df_educ_38$CCAA <- CCAA_sin_UE_sin_ord
+df_educ_38 <- df_educ_38  %>% select(CCAA, everything())
+colnames (df_educ_38) <- gsub("X", "", colnames(df_educ_38))
+
+#limpieza datos ruido
+names(df_ruidos) <- as.matrix(df_ruidos[1, ])
+df_ruidos <- df_ruidos[-c(1,9), ]
+df_ruidos[] <- lapply(df_ruidos, function(x) type.convert(as.character(x)))
+
+df_ruidos <- df_ruidos[-1]
+df_ruidos <- data.frame(lapply(df_ruidos, function(x) gsub(",", ".", x, fixed = TRUE)))
+df_ruidos <- as.data.frame(sapply(df_ruidos, as.numeric))
+
+df_ruidos$CCAA <- CCAA_2
+df_ruidos <- df_ruidos %>% select(CCAA, everything())
+colnames (df_ruidos) <- gsub("X", "", colnames(df_ruidos))
+
+#limpieza datos delincuencia
+names(df_del_ccaa) <- as.matrix(df_del_ccaa[1, ])
+df_del_ccaa <- df_del_ccaa[-c(1,2), ]
+df_del_ccaa[] <- lapply(df_del_ccaa, function(x) type.convert(as.character(x)))
+
+df_del_ccaa <- df_del_ccaa[-1]
+df_del_ccaa <- data.frame(lapply(df_del_ccaa, function(x) gsub(",", ".", x, fixed = TRUE)))
+df_del_ccaa <- as.data.frame(sapply(df_del_ccaa, as.numeric))
+
+df_del_ccaa$CCAA <- CCAA_sin_UE_sin_ord
+df_del_ccaa <- df_del_ccaa %>% select(CCAA, everything())
+colnames(df_del_ccaa) <- gsub("X", "", colnames(df_del_ccaa))
+
+#Renta media normalizado
+#convertir 2020 a numeros
+df_Renta_media$`2020` <- as.numeric(df_Renta_media$`2020`)
+#Sacar valores normalizados
+Renta_media_norm <- as.data.frame(lapply(df_Renta_media[14], min_max_norm_gran))
+Renta_media_norm$CCAA <- CCAA_sin_UE
+Renta_media_norm <- Renta_media_norm  %>% select(CCAA = "CCAA", everything())
+
+#Renta mediana normalizado
+df_Renta_mediana$`2020` <- as.numeric(df_Renta_mediana$`2020`)
+#Sacar valores normalizados
+Renta_mediana_norm <- as.data.frame(lapply(df_Renta_mediana[14], min_max_norm_gran))
+Renta_mediana_norm$CCAA <- CCAA_sin_UE
+Renta_mediana_norm <- Renta_mediana_norm  %>% select(CCAA = "CCAA", everything())
+
+#Desigualdad normalizado
+#cuanto mayor es, mayor es la desigualdad
+#Sacar valores normalizados
+Desigualdad_norm <- as.data.frame(lapply(df_Desigualdad[14], min_max_norm_peq))
+Desigualdad_norm$CCAA <- CCAA_sin_UE
+Desigualdad_norm <- Desigualdad_norm  %>% select(CCAA = "CCAA", everything())
+
+#Riesgo de pobreza normalizado
+
+#lo de sub es para cambiar de coma a punto, r lee decimales con puntos
+df_Riesgo_pobreza$`2020` <- as.numeric(sub(",", ".", df_Riesgo_pobreza$`2020`, fixed = TRUE))
+#Sacar valores normalizados
+Riesgo_pobreza_norm <- as.data.frame(lapply(df_Riesgo_pobreza[14], min_max_norm_peq))
+Riesgo_pobreza_norm$CCAA <- CCAA_sin_UE
+Riesgo_pobreza_norm <- Riesgo_pobreza_norm  %>% select(CCAA = "CCAA", everything())
+
+#unión de condiciones económicas------------
+df_norm_cond_econ <- inner_join(Renta_media_norm, Renta_mediana_norm, by = "CCAA")
+df_norm_cond_econ <- df_norm_cond_econ %>% rename(Renta_media = X2020.x, Renta_mediana = X2020.y)
+
+df_norm_cond_econ_2 <- inner_join(Desigualdad_norm, Riesgo_pobreza_norm, by = "CCAA")
+df_norm_cond_econ_2 <- df_norm_cond_econ_2 %>% rename(Desigualdad = X2020.x, Riesgo_pobreza = X2020.y)
+
+#tabla con las condiciones económicas normalizadas de cada una de las CCAA
+df_norm_cond_econ_suma <- inner_join(df_norm_cond_econ, df_norm_cond_econ_2, by = "CCAA")
+
+#añadir columna con total de valores normalizados
+df_norm_cond_econ_suma_no_CCAA <- df_norm_cond_econ_suma %>% select(!"CCAA")
+
+#Sumamos todos los (4) subindicadores y creamos columna con el total
+Suma_cond_econ_norm_ord <- df_norm_cond_econ_suma  %>% mutate(cond_econ_total = rowSums(df_norm_cond_econ_suma_no_CCAA)) %>% arrange(desc(cond_econ_total))
+Suma_cond_econ_norm <- df_norm_cond_econ_suma  %>% mutate(cond_econ_total = rowSums(df_norm_cond_econ_suma_no_CCAA)) 
+
+#Puntuación de condiciones económicas----------
+Total_norm_cond_econ <- Suma_cond_econ_norm %>% select("CCAA", "cond_econ_total") 
+
+Norm_cond_econ <- as.data.frame(lapply(Total_norm_cond_econ[2], min_max_norm_gran))
+Norm_cond_econ$CCAA <- CCAA_sin_UE
+Norm_cond_econ <- Norm_cond_econ  %>% select(CCAA = "CCAA", everything()) %>% arrange(desc(cond_econ_total))
+
+#Tasa empleo normalizado
+
+#Sacar valores normalizados
+tasa_empleo_norm <- as.data.frame(lapply(df_tasa_empleo[16], min_max_norm_gran))
+tasa_empleo_norm$CCAA <- CCAA_sin_UE_sin_ord
+tasa_empleo_norm <- tasa_empleo_norm  %>% select(CCAA = "CCAA", everything())
+
+#Tasa paro normalizado
+
+tasa_paro_norm <- as.data.frame(lapply(df_tasa_paro[16], min_max_norm_peq))
+tasa_paro_norm$CCAA <- CCAA_sin_UE_sin_ord
+tasa_paro_norm <- tasa_paro_norm  %>% select(CCAA = "CCAA", everything())
+
+#satisfacción trabajo normalizado
+
+
+satis_trab_norm <- as.data.frame(lapply(df_satis_trab[6], min_max_norm_gran))
+satis_trab_norm$CCAA <- CCAA_sin_UE_sin_ord
+satis_trab_norm <- satis_trab_norm  %>% select(CCAA = "CCAA", everything())
+
+#trabajo temporal normalizado
+
+
+trabajo_temp_norm <- as.data.frame(lapply(df_trabajo_temp[16], min_max_norm_peq))
+trabajo_temp_norm$CCAA <- CCAA_sin_UE_sin_ord
+trabajo_temp_norm <- trabajo_temp_norm  %>% select(CCAA = "CCAA", everything())
+
+#unión de TRABAJO-------------
+df_norm_trabajo <- inner_join(tasa_empleo_norm, tasa_paro_norm, by = "CCAA")
+df_norm_trabajo <- df_norm_trabajo %>% rename(tasa_empleo = X2020.x, tasa_paro = X2020.y)
+
+df_norm_trabajo_2 <- inner_join(satis_trab_norm, trabajo_temp_norm, by = "CCAA")
+df_norm_trabajo_2 <- df_norm_trabajo_2 %>% rename(satis_trab = Satisfaccion.media, trabajo_temp = X2020)
+
+#tabla con las condiciones económicas normalizadas de cada una de las CCAA
+df_norm_trabajo_suma <- inner_join(df_norm_trabajo, df_norm_trabajo_2, by = "CCAA")
+
+#añadir columna con total de valores normalizados
+df_norm_trabajo_suma_no_CCAA <- df_norm_trabajo_suma %>% select(!"CCAA")
+
+#ordenado
+Suma_trabajo_norm_ord <- df_norm_trabajo_suma  %>% mutate(trabajo_total = rowSums(df_norm_trabajo_suma_no_CCAA)) %>% arrange(desc(trabajo_total))
+#no ordenado
+Suma_trabajo_norm <- df_norm_trabajo_suma  %>% mutate(trabajo_total = rowSums(df_norm_trabajo_suma_no_CCAA)) 
+
+#Puntuación de trabajo-----
+Total_norm_trabajo <- Suma_trabajo_norm %>% select("CCAA", "trabajo_total") 
+
+Norm_trabajo <- as.data.frame(lapply(Total_norm_trabajo[2], min_max_norm_gran))
+Norm_trabajo$CCAA <- CCAA_sin_UE_sin_ord
+Norm_trabajo <- Norm_trabajo  %>% select(CCAA = "CCAA", everything()) %>% arrange(desc(trabajo_total))
+#Gráfico de condicones materiales
+
+#Renta media
+CV_Renta_media <- Suma_cond_econ_norm_ord %>% select(CCAA, Renta_media) %>% filter(CCAA == "Comunidad_Valenciana")
+g_renta_media <- Suma_cond_econ_norm_ord %>% select(CCAA, Renta_media) %>% ggplot(aes(x = reorder(CCAA, Renta_media), y = Renta_media)) + 
+  geom_bar(position = "dodge",
+           stat = "identity",
+           fill = "dark green") +
+  labs( y = "Valores del Índice" ,
+        title = "Renta media") +
+  coord_flip() +
+  #geom_hline(yintercept = quartiles, colour = "red") +
+  geom_bar(data = CV_Renta_media,
+           position = "dodge",
+           stat = "identity",
+           fill = "purple") +
+  theme_wsj()
+
+
+#Renta mediana
+CV_Renta_mediana <- Suma_cond_econ_norm_ord %>% select(CCAA, Renta_mediana) %>% filter(CCAA == "Comunidad_Valenciana")
+g_renta_mediana <- Suma_cond_econ_norm_ord %>% select(CCAA, Renta_mediana) %>% ggplot(aes(x = reorder(CCAA, Renta_mediana), y = Renta_mediana)) + 
+  geom_bar(position = "dodge",
+           stat = "identity",
+           fill = "dark green") +
+  labs( y = "Valores del Índice" ,
+        title = "Renta mediana") +
+  coord_flip() +
+  #geom_hline(yintercept = quartiles, colour = "red") +
+  geom_bar(data = CV_Renta_mediana,
+           position = "dodge",
+           stat = "identity",
+           fill = "purple") +
+  theme_wsj()
+
+
+#Desigualdad
+CV_Desigualdad <- Suma_cond_econ_norm_ord %>% select(CCAA, Desigualdad) %>% filter(CCAA == "Comunidad_Valenciana")
+g_Desigualdad <- Suma_cond_econ_norm_ord %>% select(CCAA, Desigualdad) %>% ggplot(aes(x = reorder(CCAA, Desigualdad), y = Desigualdad)) + 
+  geom_bar(position = "dodge",
+           stat = "identity",
+           fill = "dark green") +
+  labs( y = "Valores del Índice" ,
+        title = "Desigualdad") +
+  coord_flip() +
+  #geom_hline(yintercept = quartiles, colour = "red") +
+  geom_bar(data = CV_Desigualdad,
+           position = "dodge",
+           stat = "identity",
+           fill = "purple") +
+  theme_wsj()
+
+
+#Riesgo Pobreza
+CV_Riesgo_pobreza <- Suma_cond_econ_norm_ord %>% select(CCAA, Riesgo_pobreza) %>% filter(CCAA == "Comunidad_Valenciana")
+g_Riesgo_pobreza <- Suma_cond_econ_norm_ord %>% select(CCAA, Riesgo_pobreza) %>% ggplot(aes(x = reorder(CCAA, Riesgo_pobreza), y = Riesgo_pobreza)) + 
+  geom_bar(position = "dodge",
+           stat = "identity",
+           fill = "dark green") +
+  labs( y = "Valores del Índice" ,
+        title = "Riesgo Pobreza") +
+  coord_flip() +
+  #geom_hline(yintercept = quartiles, colour = "red") +
+  geom_bar(data = CV_Riesgo_pobreza,
+           position = "dodge",
+           stat = "identity",
+           fill = "purple") +
+  theme_wsj()
+#Gráfico índice condicionesmateriales-----------
+
+CV_Norm_cond_econ <- Norm_cond_econ %>% filter(CCAA == "Comunidad_Valenciana")
+
+p_cond_mat <- Norm_cond_econ %>% ggplot(aes(x = reorder(CCAA, cond_econ_total), y = cond_econ_total)) + 
+  geom_bar(position = "dodge",
+    stat = "identity",
+    fill = "steelblue") +
+  labs( y = "Valores del Índice" ,
+       title = "Las condiciones maeriales",
+       #subtitle = "Destacando la Comunidad Valenciana",
+       caption = "Elaboración propia") +
+  coord_flip() +
+  #geom_hline(yintercept = quartiles, colour = "red") +
+  theme(axis.line = element_line(colour = 'black', size = 1)) +
+  geom_bar(data = CV_Norm_cond_econ,
+           position = "dodge",
+           stat = "identity",
+           fill = " dark orange") +
+  theme_wsj()
+
+
+
+#Gráfico índice trabajo---------
+CV_Norm_trabajo <- Norm_trabajo %>% filter(CCAA == "Comunidad_Valenciana")
+
+p_trabajo <- Norm_trabajo %>% ggplot(aes(x = reorder(CCAA, trabajo_total), y = trabajo_total)) + 
+  geom_bar(position = "dodge",
+           stat = "identity",
+           fill = "steelblue") +
+  labs( y = "Valores del Índice" ,
+        title = "La situación laboral",
+        #subtitle = "Destacando la Comunidad Valenciana",
+        caption = "Elaboración propia") +
+  coord_flip() +
+  #geom_hline(yintercept = quartiles, colour = "red") +
+  theme(axis.line = element_line(colour = 'black', size = 1)) +
+  geom_bar(data = CV_Norm_trabajo,
+           position = "dodge",
+           stat = "identity",
+           fill = " dark orange") +
+  theme_wsj()
+
+#valores normalizados
+
+#tasa abandono normalizado
+#Sacar valores normalizados
+abandono_norm <- as.data.frame(lapply(df_abandono[18], min_max_norm_peq))
+abandono_norm$CCAA <- CCAA_sin_UE_sin_ord
+abandono_norm <- abandono_norm  %>% select(CCAA = "CCAA", everything())
+
+#esperanza vida normalizado
+df_esperanza_vida$`2020` <- as.numeric(sub(",", ".", df_esperanza_vida$`2020*`, fixed = TRUE))
+df_esperanza_vida <- df_esperanza_vida[-c(18)]
+#Sacar valores normalizados
+esperanza_vida_norm <- as.data.frame(lapply(df_esperanza_vida[18], min_max_norm_gran))
+esperanza_vida_norm$CCAA <- CCAA_sin_UE_sin_ord
+esperanza_vida_norm <- esperanza_vida_norm  %>% select(CCAA = "CCAA", everything())
+
+#acceso normalizado
+df_no_acceso_1$`2020` <- as.numeric(sub(",", ".", df_no_acceso_1$`2020`, fixed = TRUE))
+#Sacar valores normalizados
+no_acceso_1_norm <- as.data.frame(lapply(df_no_acceso_1[18], min_max_norm_peq))
+no_acceso_1_norm$CCAA <- CCAA_sin_UE_sin_ord
+no_acceso_1_norm <- no_acceso_1_norm  %>% select(CCAA = "CCAA", everything())
+
+#educ_38 normalizado
+
+df_educ_38$`2020` <- as.numeric(sub(",", ".", df_educ_38$`2020`, fixed = TRUE))
+#Sacar valores normalizados
+educ_38_norm <- as.data.frame(lapply(df_educ_38[18], min_max_norm_gran))
+educ_38_norm$CCAA <- CCAA_sin_UE_sin_ord
+educ_38_norm <- educ_38_norm  %>% select(CCAA = "CCAA", everything())
+
+
+#unión de EDUCACIÓN Y SALUD-------------
+df_norm_educ_salud <- inner_join(no_acceso_1_norm, esperanza_vida_norm , by = "CCAA")
+df_norm_educ_salud <- df_norm_educ_salud %>% rename(no_acceso_1 = X2020.x, esperanza_vida = X2020.y)
+
+df_norm_educ_salud_2 <- inner_join(abandono_norm, educ_38_norm, by = "CCAA")
+df_norm_educ_salud_2 <- df_norm_educ_salud_2 %>% rename(abandono = X2020.x, educ_38 = X2020.y)
+
+#tabla con las condiciones económicas normalizadas de cada una de las CCAA
+df_norm_educ_salud_suma <- inner_join(df_norm_educ_salud, df_norm_educ_salud_2, by = "CCAA")
+
+#añadir columna con total de valores normalizados
+df_norm_educ_salud_suma_no_CCAA <- df_norm_educ_salud_suma %>% select(!"CCAA")
+
+#ordenado
+Suma_educ_salud_norm_ord <- df_norm_educ_salud_suma  %>% mutate(Educ_salud_Total = rowSums(df_norm_educ_salud_suma_no_CCAA)) %>% arrange(desc(Educ_salud_Total))
+#no ordenado
+Suma_educ_salud_norm <- df_norm_educ_salud_suma  %>% mutate(Educ_salud_Total = rowSums(df_norm_educ_salud_suma_no_CCAA)) 
+
+#Puntuación de educ_salud, faltaría hacer lo mismo para las otras cuatro condciones y luego asignar un porcentaje a cada uno si es posible.------------
+Total_norm_educ_salud <- Suma_educ_salud_norm %>% select("CCAA", "Educ_salud_Total") 
+
+Norm_educ_salud <- as.data.frame(lapply(Total_norm_educ_salud[2], min_max_norm_gran))
+Norm_educ_salud$CCAA <- CCAA_sin_UE_sin_ord
+Norm_educ_salud <- Norm_educ_salud  %>% select(CCAA = "CCAA", everything()) %>% arrange(desc(Educ_salud_Total))
+#Gráfico educ salud----------
+CV_Norm_educ_salud <- Norm_educ_salud %>% filter(CCAA == "Comunidad_Valenciana")
+
+p_educ_salud <- Norm_educ_salud  %>% ggplot(aes(x = reorder(CCAA, Educ_salud_Total), y = Educ_salud_Total)) + 
+  geom_bar(position = "dodge",
+           stat = "identity",
+           fill = "steelblue") +
+  labs( y = "Valores del Índice" ,
+        title = "La educación y la salud",
+        #subtitle = "Destacando la Comunidad Valenciana",
+        caption = "Elaboración propia") +
+  coord_flip() +
+  #geom_hline(yintercept = quartiles, colour = "red") +
+  theme(axis.line = element_line(colour = 'black', size = 1)) +
+  geom_bar(data = CV_Norm_educ_salud,
+           position = "dodge",
+           stat = "identity",
+           fill = " dark orange") +
+  theme_wsj()
+
+#ruido normalizado
+df_ruidos_norm <- as.data.frame(lapply(df_ruidos[18], min_max_norm_peq))
+df_ruidos_norm$CCAA <- CCAA_2
+df_ruidos_norm <- df_ruidos_norm %>% select(CCAA = "CCAA", everything())
+
+#delincuencia
+df_del_ccaa_norm <- as.data.frame(lapply(df_del_ccaa[18], min_max_norm_peq))
+df_del_ccaa_norm$CCAA <- CCAA_sin_UE_sin_ord
+df_del_ccaa_norm <- df_del_ccaa_norm %>% select(CCAA = "CCAA", everything())
+
+#unión efectos ambientales
+df_ef_amb_norm <- inner_join(df_ruidos_norm, df_del_ccaa_norm, by = "CCAA")
+df_ef_amb_norm <- df_ef_amb_norm %>% rename(ruidos = X2020.x, delincuencia = X2020.y)
+
+df_ef_amb_norm_suma_no_CCAA <- df_ef_amb_norm %>% select(!"CCAA")
+
+#ordenado
+Suma_ef_amb_norm_suma <- df_ef_amb_norm  %>% mutate(Ef_amb_total = rowSums(df_ef_amb_norm_suma_no_CCAA)) %>% arrange(desc(Ef_amb_total))
+#no ordenado
+Suma_ef_amb_norm_suma_ord <- df_ef_amb_norm  %>% mutate(Ef_amb_total = rowSums(df_ef_amb_norm_suma_no_CCAA))
+
+#Puntuación de efectos ambientales, faltaría hacer lo mismo para las otras cuatro condciones y luego asignar un porcentaje a cada uno si es posible.------------
+Total_norm_ef_amb <- Suma_ef_amb_norm_suma %>% select("CCAA", "Ef_amb_total") 
+
+Norm_ef_amb <- as.data.frame(lapply(Total_norm_ef_amb[2], min_max_norm_gran))
+
+Norm_ef_amb$CCAA <- CCAA_3
+Norm_ef_amb <- Norm_ef_amb %>% select(CCAA = "CCAA", everything()) %>% arrange(desc(Ef_amb_total))
+
+#Gráfico otros indicadores---------
+CV_Norm_ef_amb <- Norm_ef_amb %>% filter(CCAA == "Comunidad_Valenciana")
+
+p_otros_ind <- Norm_ef_amb  %>% ggplot(aes(x = reorder(CCAA, Ef_amb_total), y = Ef_amb_total)) + 
+  geom_bar(position = "dodge",
+           stat = "identity",
+           fill = "steelblue") +
+  labs( y = "Valores del Índice" ,
+        title = "Otros indicadores",
+        #subtitle = "Destacando la Comunidad Valenciana",
+        caption = "Elaboración propia") +
+  coord_flip() +
+  #geom_hline(yintercept = quartiles, colour = "red") +
+  theme(axis.line = element_line(colour = 'black', size = 1)) +
+  geom_bar(data = CV_Norm_ef_amb,
+           position = "dodge",
+           stat = "identity",
+           fill = " dark orange") +
+  theme_wsj()
+#Crear Ranking Final
+
+df_cond_econ_educ_salud <- inner_join(Norm_cond_econ, Norm_educ_salud, by = "CCAA")
+df_ef_amb_trabajo <- inner_join(Norm_ef_amb, Norm_trabajo, by = "CCAA")
+
+df_ranking_final <- inner_join(df_cond_econ_educ_salud, df_ef_amb_trabajo, by = "CCAA")
+
+df_ranking_final_sin_CCAA <- df_ranking_final %>% select(!"CCAA")
+
+#ordenado
+Suma_ranking_final_ord <- df_ranking_final %>% mutate(ranking_final_total = rowSums(df_ranking_final_sin_CCAA)) %>% arrange(desc(ranking_final_total))
+#no ordenado
+Suma_ranking_final <- df_ranking_final  %>% mutate(ranking_final_total = rowSums(df_ranking_final_sin_CCAA)) 
+
+#Puntuación de ranking final
+Total_norm_ranking_final <- Suma_ranking_final %>% select("CCAA", "ranking_final_total") 
+
+Norm_ranking_final <- as.data.frame(lapply(Total_norm_ranking_final[2], min_max_norm_gran))
+Norm_ranking_final$CCAA <- CCAA_rank_final
+Norm_ranking_final <- Norm_ranking_final  %>% select(CCAA = "CCAA", everything()) %>% arrange(desc(ranking_final_total))
+
+#Gráfico con Ranking Final-------------
+CV_ranking_final <- Norm_ranking_final %>% filter(CCAA == "Comunidad_Valenciana")
+
+p_rank_final <- Norm_ranking_final  %>% ggplot(aes(x = reorder(CCAA, ranking_final_total), y = ranking_final_total)) + 
+  geom_bar(position = "dodge",
+           stat = "identity",
+           fill = "steelblue") +
+  labs( y = "Valores del Índice" ,
+        title = "Índice de la vida en España",
+        subtitle = "Destacando la Comunidad Valenciana",
+        caption = "Elaboración propia") +
+  coord_flip() +
+  #geom_hline(yintercept = quartiles, colour = "red") +
+  theme(axis.line = element_line(colour = 'black', size = 1)) +
+  geom_bar(data = CV_ranking_final,
+           position = "dodge",
+           stat = "identity",
+           fill = " dark orange") +
+  theme_wsj()
+
+
+
+```
+
+```{r Renta media, echo = FALSE}
+p_renta_media
+```
+
+## Renta mediana 
+
+
+```{r Renta mediana, echo = FALSE}
+p_renta_mediana
+```
+
+## Desigualdad
+
+
+```{r desigualdad, echo = FALSE}
+p_desigualdad
+```
+
+## Riesgo de pobreza
+
+
+```{r riesgo pobreza, echo = FALSE}
+p_riesgo_pobreza
+```
+
+## Tasa de Empleo
+
+```{r tasa empleo, echo = FALSE}
+graf_empleo
+```
+
+## Tasa de Paro
+
+```{r tasa paro, echo = FALSE}
+ggplotly(graf_paro1)
+```
+
+
+## Tasa de trabajo temporal
+
+```{r tasa temporal, echo = FALSE}
+graficotemp_2020
+```
+
+## Tabla de la esperanza de Vida
+
+```{r tabla espernaza de vida, echo = FALSE}
+tabla_ccaa
+```
+
+## Gráfico de la esperanza de vida
+
+```{r esperanza de vida grafico, echo = FALSE}
+vida_di
+```
+
+## Gráfico de la esperanza de vida en la CV
+
+```{r esperanza de vida cv, echo = FALSE}
+vida_hm_di
+```
+
+## Acceso a cuidados sanitarios
+
+```{r acceso cuidados sanitarios, echo = FALSE}
+tabla_com
+```
+
+## No Acceso a cuidados sanitarios en la CV Razones 1
+
+```{r acceso cuidados sanitarios cv 1, echo = FALSE}
+grafico_cv1
+```
+
+## No Acceso a cuidados sanitarios en la CV Razones 2
+
+```{r acceso cuidados sanitarios cv 2, echo = FALSE}
+grafico_cv2
+```
+
+#Nivel de educación 0-2
+
+```{r nivel educacion 0-2, echo = FALSE}
+tabla2020
+```
+
+#Nivel de educación 0-2 gráfico 1
+
+```{r nivel educacion 0-2 graf 1, echo = FALSE}
+grafico_educmax
+```
+
+#Nivel de educación 0-2 gráfico 2
+
+```{r nivel educacion 0-2 2, echo = FALSE}
+grafico_educmin
+```
+
+## Nivel de Educación 3-8
+
+```{r nivel educ 38, echo = FALSE}
+tabla2038
+```
+
+## Nivel de Educación 3-8 gráfico 1
+
+```{r nivel educ 38 1, echo = FALSE}
+grafico_educmax38
+```
+
+## Nivel de Educación 3-8 gráfico 2
+
+```{r nivel educ 38 2, echo = FALSE}
+grafico_educmin38
+```
+
+
+## Tasa de abandono
+
+```{r tasa abndono, echo = FALSE}
+g_aban
+```
+
+
+## Problemas de ruidos
+
+
+```{r ruidos 1, echo = FALSE}
+ruido1 
+```
+
+## Problemas de ruidos
+
+
+```{r ruidos 2, echo = FALSE}
+ruido2
+```
+
+
+## Delincuencia 
+
+```{r delincuencia, echo = FALSE}
+del_ccaa
+```
+
+## Delincuencia top CCAA
+
+```{r delincuencia top , echo = FALSE}
+p_top
+```
+
+
+## Delincuencia min CCAA
+
+```{r delincuencia min, echo = FALSE}
+p_min
+```
+
+
+## Delincuencia en la CV
+
+```{r delincuencia cv, echo = FALSE}
+p_delcv
+```
+
+
+## Índice de la renta media
+
+```{r indice renta media, echo = FALSE}
+g_renta_media
+```
+
+
+## Índice de la renta mediana
+
+```{r indice renta mediana, echo = FALSE}
+g_renta_mediana
+```
+
+
+## Índice de la desigualdad
+
+```{r delincuencia desigualdad, echo = FALSE}
+g_Desigualdad
+```
+
+
+## Índice de las condicones materiales
+
+```{r indice cond mat, echo = FALSE}
+p_cond_mat
+```
+
+## Índice del trabajo
+
+```{r indice trabajo, echo = FALSE}
+p_trabajo
+```
+
+## Índice de la desigualdad
+
+```{r indice educ salud, echo = FALSE}
+p_educ_salud
+```
+
+## Índice de los otros indicadores
+
+```{r delincuencia riesgo pobreza, echo = FALSE}
+p_otros_ind
+```
+
+## Índice global
+
+```{r indice final, echo = FALSE}
+p_rank_final
+```
